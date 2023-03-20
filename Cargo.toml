@@ -1,0 +1,13 @@
+[package]
+name = "rolock"
+version = "0.1.0"
+edition = "2021"
+authors = ["hinto.janai <hinto.janai@protonmail.com>"]
+description = "Read Only Lock"
+documentation = "https://docs.rs/rolock"
+repository = "https://github.com/hinto-janai/rolock"
+readme = "README.md"
+keywords = ["read", "lock", "sync", "read-only", "thread"]
+license = "MIT"
+
+[dependencies]
