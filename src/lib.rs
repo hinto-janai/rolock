@@ -4,17 +4,16 @@
 //!
 //! Usage: Create a normal [`Arc<RwLock<T>>`] in `thread_1`, send a [`RoLock`] to `thread_2`:
 //! ```
-//! use std::sync::*;
-//! use rolock::RoLock;
+//! # use std::sync::*;
+//! # use rolock::RoLock;
+//! let rw = Arc::new(RwLock::new(0));     // Regular Arc<RwLock<T>>.
+//! let ro = RoLock::new(&rw);             // Read Only Lock.
 //!
-//! let rw = Arc::new(RwLock::new(0)); // Regular Arc<RwLock<T>>.
-//! let ro = RoLock::new(&rw);         // Read Only Lock.
-//!
-//! assert!(*rw.read().unwrap() == 0); // This can read...
-//! *rw.write().unwrap() = 1;          // and write.
+//! assert!(*rw.read().unwrap() == 0);     // This can read...
+//! *rw.write().unwrap() = 1;              // and write.
 //!
 //! std::thread::spawn(move|| {
-//! 	assert!(*ro.read() == 1);      // This one can only read.
+//! 	assert!(*ro.read().unwrap() == 1); // This one can only read.
 //! });
 //! ```
 //! - `thread_1` still has full read/write control
@@ -22,7 +21,7 @@
 //!
 //! This type guarantees at compile time that you cannot write because the function doesn't even exist:
 //! ```compile_fail
-//! # use std::sync::*;
+//! # use std::sync::{Arc,RwLock};
 //! # use rolock::RoLock;
 //! let rw = Arc::new(RwLock::new(0));
 //! let ro = RoLock::new(&rw);
@@ -31,7 +30,7 @@
 //! ```
 //! Since the inner field of [`RoLock`] (`self.0`) is private, you can't call [`RwLock::write`] directly either:
 //! ```compile_fail
-//! # use std::sync::*;
+//! # use std::sync::{Arc,RwLock};
 //! # use rolock::RoLock;
 //! let rw = Arc::new(RwLock::new(0));
 //! let ro = RoLock::new(&rw);
@@ -42,7 +41,8 @@
 //! Calling `.clone()` on `RoLock` is (relatively) cheap, as it just clones the inner [`Arc`].
 //! ```rust
 //! # use std::sync::Arc;
-//! let (rw, ro) = RoLock::new_pair();
+//! # use rolock::RoLock;
+//! let (rw, ro) = RoLock::new_pair(0);
 //!
 //! // This is (relatively) cheap.
 //! let clone = ro.clone();
@@ -51,6 +51,8 @@
 use std::sync::*;
 
 /// Read Only Lock.
+///
+/// This is a wrapper around [`Arc<RwLock<T>>`] that only implements [`RwLock::read()`] operations.
 #[derive(Debug)]
 pub struct RoLock<T>(Arc<RwLock<T>>);
 
@@ -121,7 +123,7 @@ impl<T: std::fmt::Debug> RoLock<T> {
 
 		match RwLock::into_inner(rw) {
 			Ok(inner) => Ok(inner),
-			Err(e)    => return Err(IntoInnerError::Poison),
+			Err(_)    => return Err(IntoInnerError::Poison),
 		}
 	}
 

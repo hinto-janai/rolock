@@ -1,7 +1,5 @@
 # RoLock
-![Build](https://github.com/hinto-janai/rolock/actions/workflows/build.yml/badge.svg)
-[![crates.io](https://img.shields.io/crates/v/rolock.svg)](https://crates.io/crates/rolock)
-[![docs.rs](https://docs.rs/rolock/badge.svg)](https://docs.rs/rolock)
+![Build](https://github.com/hinto-janai/rolock/actions/workflows/build.yml/badge.svg) ![Test](https://github.com/hinto-janai/rolock/actions/workflows/test.yml/badge.svg) [![crates.io](https://img.shields.io/crates/v/rolock.svg)](https://crates.io/crates/rolock) [![docs.rs](https://docs.rs/rolock/badge.svg)](https://docs.rs/rolock)
 
 Read Only Lock.
 
@@ -10,17 +8,14 @@ This is a wrapper around `Arc<RwLock<T>>` that only implements `RwLock::read()` 
 ## Usage
 Create a normal `Arc<RwLock<T>>` in `thread_1`, send a `RoLock` to `thread_2`:
 ```rust
-use std::sync::*;
-use rolock::RoLock;
+let rw = Arc::new(RwLock::new(0));     // Regular Arc<RwLock<T>>.
+let ro = RoLock::new(&rw);             // Read Only Lock.
 
-let rw = Arc::new(RwLock::new(0)); // Regular Arc<RwLock<T>>.
-let ro = RoLock::new(&rw);         // Read Only Lock.
-
-*rw.write().unwrap() = 1;          // This can write...
-assert!(*rw.read().unwrap() == 1); // and read.
+assert!(*rw.read().unwrap() == 0);     // This can read...
+*rw.write().unwrap() = 1;              // and write.
 
 std::thread::spawn(move|| {
-    assert!(*ro.read() == 1);      // This one can only read.
+	assert!(*ro.read().unwrap() == 1); // This one can only read.
 });
 ```
 - `thread_1` still has full read/write control
