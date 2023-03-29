@@ -59,12 +59,27 @@ pub struct RoLock<T>(Arc<RwLock<T>>);
 impl<T: std::fmt::Debug> RoLock<T> {
 	#[inline(always)]
 	/// Get an [`Arc`] to an existing [`Arc<RwLock<T>>`] but as a [`RoLock`].
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// # use std::sync::{Arc,RwLock};
+	/// let rw = Arc::new(RwLock::new(true));
+	///
+	/// let ro = RoLock::new(&rw);
+	///
+	/// assert!(*rw.read().unwrap() == *ro.read().unwrap());
+	/// ```
 	pub fn new(value: &Arc<RwLock<T>>) -> Self {
 		Self::from(value)
 	}
 
 	#[inline(always)]
 	/// Creates a whole new [`Arc<RwLock<T>>`], returning it and an associated [`RoLock`].
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// let (rw, ro) = RoLock::new_pair(true);
+	///
+	/// assert!(*rw.read().unwrap() == *ro.read().unwrap());
+	/// ```
 	pub fn new_pair(value: T) -> (Arc<RwLock<T>>, Self) {
 		let rw = Arc::new(RwLock::new(value));
 		let ro = Self::from(&rw);
@@ -73,6 +88,14 @@ impl<T: std::fmt::Debug> RoLock<T> {
 
 	#[inline(always)]
 	/// Wraps a [`RwLock`] in an [`Arc`], returning it alongside an associated [`RoLock`].
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// # use std::sync::RwLock;
+	/// let rw = RwLock::new(true);
+	/// let (rw, ro) = RoLock::from_rw(rw);
+	///
+	/// assert!(*rw.read().unwrap() == *ro.read().unwrap());
+	/// ```
 	pub fn from_rw(value: RwLock<T>) -> (Arc<RwLock<T>>, Self) {
 		let rw = Arc::new(value);
 		let ro = Self::new(&rw);
@@ -100,13 +123,42 @@ impl<T: std::fmt::Debug> RoLock<T> {
 	#[inline(always)]
 	/// Gets the number of [`RoLock`]'s pointing to the same data.
 	///
+	/// [`RoLock::new_pair`] creates 2 [`Arc`]'s:
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// # use std::sync::Arc;
+	/// let (rw, ro) = RoLock::new_pair(0);
+	/// assert!(Arc::strong_count(&rw) == 2);
+	/// assert!(ro.strong_count()      == 2);
+	///
+	/// drop(rw);
+	/// assert!(ro.strong_count() == 1);
+	/// ```
+	///
 	/// Calls [`Arc::strong_count`].
 	pub fn strong_count(&self) -> usize {
 		Arc::strong_count(&self.0)
 	}
 
 	#[inline(always)]
-	/// Calls [`Arc::try_unwrap`] and [`RwLock::into_inner`] and returns the inner value.
+	/// Calls [`Arc::try_unwrap`] and [`RwLock::into_inner`] and returns the inner value:
+	///
+	/// We silently [`drop`] the `Arc<RwLock>` by using `_` here,
+	/// so when we `into_inner()`, it should be the only one left:
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// # use std::sync::{Arc,RwLock};
+	/// let (_, ro) = RoLock::new_pair(0);
+	/// assert!(ro.into_inner().unwrap() == 0);
+	/// ```
+	///
+	/// We _don't [`drop`] the `Arc<RwLock>` here, this should panic:
+	/// ```rust,should_panic
+	/// # use rolock::RoLock;
+	/// # use std::sync::{Arc,RwLock};
+	/// let (rw, ro) = RoLock::new_pair(0);
+	/// assert!(ro.into_inner().unwrap() == 0);
+	/// ```
 	///
 	/// # Errors
 	/// You must ensure that:
@@ -131,6 +183,23 @@ impl<T: std::fmt::Debug> RoLock<T> {
 	/// Same as [`RoLock::into_inner`], but panics instead of erroring.
 	///
 	/// # Panics
+	/// We silently [`drop`] the `Arc<RwLock>` by using `_` here,
+	/// so when we `into_inner()`, it should be the only one left:
+	/// ```rust
+	/// # use rolock::RoLock;
+	/// # use std::sync::{Arc,RwLock};
+	/// let (_, ro) = RoLock::new_pair(0);
+	/// assert!(ro.into_inner_unchecked() == 0);
+	/// ```
+	///
+	/// We _don't [`drop`] the `Arc<RwLock>` here, this should panic:
+	/// ```rust,should_panic
+	/// # use rolock::RoLock;
+	/// # use std::sync::{Arc,RwLock};
+	/// let (rw, ro) = RoLock::new_pair(0);
+	/// assert!(ro.into_inner_unchecked() == 0);
+	/// ```
+	///
 	/// You must ensure that:
 	/// 1. There are no other [`RoLock`]'s
 	/// 2. The inner [`RwLock`] is not poisoned
@@ -144,6 +213,7 @@ impl<T: std::fmt::Debug> RoLock<T> {
 ///
 /// It either returns the [`RoLock`] or returns an empty `Poison` error,
 /// indicating the inner [`RwLock`] is poisoned.
+#[derive(Debug)]
 pub enum IntoInnerError<T> {
 	Multiple(RoLock<T>),
 	Poison,
