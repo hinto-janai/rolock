@@ -1,8 +1,6 @@
-# This documents everything, but not the dependencies.
-#
-# It also fails on warnings instead of hard errors.
+# This runs `miri`
 
-name: Doc
+name: Miri
 
 on:
   push:
@@ -14,10 +12,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  miri:
     runs-on: ubuntu-latest
-
     steps:
     - name: Cache
       uses: actions/cache@v3.2.3
@@ -25,9 +21,13 @@ jobs:
         path: |
           ~/.cargo
           target
-        key: doc
+        key: miri
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Doc
-      run: RUSTFLAGS='-D warnings' cargo doc --workspace --no-deps --all-features
+    - name: Miri
+      run: |
+        rustup toolchain install nightly --component miri
+        rustup override set nightly
+        cargo miri setup
+        cargo miri test --release --all-features

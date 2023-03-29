@@ -1,5 +1,5 @@
 # RoLock
-![Build](https://github.com/hinto-janai/rolock/actions/workflows/build.yml/badge.svg) ![Test](https://github.com/hinto-janai/rolock/actions/workflows/test.yml/badge.svg) [![crates.io](https://img.shields.io/crates/v/rolock.svg)](https://crates.io/crates/rolock) [![docs.rs](https://docs.rs/rolock/badge.svg)](https://docs.rs/rolock)
+[![Windows](https://github.com/hinto-janai/rolock/actions/workflows/windows.yml/badge.svg)](https://github.com/hinto-janai/rolock/actions/workflows/windows.yml) [![macOS](https://github.com/hinto-janai/rolock/actions/workflows/macos.yml/badge.svg)](https://github.com/hinto-janai/rolock/actions/workflows/macos.yml) [![Linux](https://github.com/hinto-janai/rolock/actions/workflows/linux.yml/badge.svg)](https://github.com/hinto-janai/rolock/actions/workflows/linux.yml) [![crates.io](https://img.shields.io/crates/v/rolock.svg)](https://crates.io/crates/rolock) [![docs.rs](https://docs.rs/rolock/badge.svg)](https://docs.rs/rolock)
 
 Read Only Lock.
 
